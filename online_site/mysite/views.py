@@ -7,6 +7,8 @@ from .permissions import CreateClothes,CreateCategory
 from .filters import ClothesFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
 
 
 class UserProfileAPIView(generics.ListAPIView):
@@ -47,14 +49,14 @@ class CategoryCreateAPIView(generics.ListCreateAPIView):
      queryset = Category.objects.all()
      serializer_class  = CategoryCreateSerializers
      permission_classes = [CreateCategory]
-
+     parser_classes = [MultiPartParser, FormParser]
 
 
 class CategoryEditAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class  = CategoryEDITSerializers
     permission_classes =[CreateCategory]
-
+    parser_classes = [MultiPartParser, FormParser]
 
 
 class ClothesListAPIView(generics.ListAPIView):
@@ -71,6 +73,8 @@ class ClothesCreateAPIView(generics.ListCreateAPIView):
     queryset = Clothes.objects.all()
     serializer_class = ClothesCreateSerializers
     permission_classes = [CreateClothes]
+    parser_classes = [MultiPartParser, FormParser]
+
 
 
 class ClothesEditAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -101,7 +105,17 @@ class CartListAPIView(generics.ListAPIView):
     queryset = Cart.objects.all()
     serializer_class = CartSerializers
 
+    def get_queryset(self):
+        return Cart.objects.filter(client_cart__id=self.request.user.id)
+
 
 class CartIemListAPIView(generics.ListCreateAPIView):
     queryset = CartItem.objects.all()
     serializer_class =CartItemSerializers
+
+
+
+    def perform_create(self, serializer):
+        cart, created = Cart.objects.get_or_create(client_cart=self.request.user)
+        serializer.save(cart=cart)
+
